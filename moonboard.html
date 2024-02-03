@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+    <style>
+        body{
+            background-color: rgb(10, 10, 34);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+        }
+
+        #moonboardImage,
+        #drawCanvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #clearButton{
+            position: relative;
+            top: 166%;
+            left: 166%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            color: white;
+            background-color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+        }
+        #saveButton{
+            position: relative;
+            top: 166%;
+            left: 133%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            color: white;
+            background-color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+        }
+        #loadButton{
+            position: relative;
+            top: 155%;
+            left: 30%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            color: white;
+            background-color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+        }
+        #probName{
+            position: relative;
+            top: 165%;
+            left: 90%;
+            transform: translate(-50%, -50%);
+        }
+        #loadProb{
+            position: relative;
+            top: 155%;
+            left: -40%;
+            transform: translate(-50%, -50%);
+        }
+        #problemNameDisplay{
+            position: absolute;
+            top: 10px;
+            color: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        #problemGrade{
+            position: absolute;
+            top: 164.5%;
+            left: 90%;
+        }
+    </style>
+    <head>
+        <title>Moonboard Control</title>
+        <link rel="icon" type="image/x-icon" href="image/climbingshoes.ico">
+    </head>
+    <body>
+        <h1 id="problemNameDisplay">Placeholder</h1>
+        <div id="container">
+            <img id="moonboardImage" src="./image/mini.png" alt="Minimoonboard">
+            <canvas id="drawCanvas"></canvas>
+            <button id="clearButton">Clear</button>
+            <button id="saveButton">Save</button>
+            <input type="text" id="probName" name="probName"><br><br>
+            <button id="loadButton">Load</button>
+            <select id="loadProb"></select>
+            <select id="problemGrade">
+                <option>V0</option>
+                <option>V1</option>
+                <option>V2</option>
+                <option>V3</option>
+                <option>V4</option>
+                <option>V5</option>
+                <option>V6</option>
+                <option>V7</option>
+                <option>V8</option>
+                <option>V9</option>
+                <option>V10</option>
+                <option>V11</option>
+                <option>V12</option>
+            </select>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var moonboardImage = document.getElementById('moonboardImage');
+                var drawCanvas = document.getElementById('drawCanvas');
+                var ctx = drawCanvas.getContext('2d');
+                var clearButton = document.getElementById('clearButton');
+                var saveButton = document.getElementById('saveButton');
+                var loadButton = document.getElementById('loadButton');
+                var loadProbList = document.getElementById('loadProb');
+                var curProbName = document.getElementById("probName");
+                var curProbGrade = document.getElementById("problemGrade");
+                var displayName = document.getElementById("problemNameDisplay");
+
+                var locked = false;
+                var x_centers = [144, 222, 298, 376, 453, 531, 609, 686, 763, 841, 918];
+                var y_centers = [119, 196, 273, 350, 428, 507, 585, 662, 737, 816, 894];
+
+                // JSON of current problem
+                let cur_problem_json = '{"START":[], "RIGHT":[], "LEFT":[], "FOOT":[], "MATCH":[], "FINISH":[]}';
+                var cur_problem = JSON.parse(cur_problem_json);
+
+                // Set Canvas dimensions to match the image
+                drawCanvas.width = moonboardImage.width;
+                drawCanvas.height = moonboardImage.height;
+
+                function calculateX(letter){
+                    return x_centers[letter.charCodeAt(0) - 'A'.charCodeAt(0)];
+                }
+
+                function calculateY(num){
+                    return y_centers[12-parseInt(num)];
+                }
+
+                //Draw loaded problems
+                function drawProblem() {
+                    ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+
+                    // Iterate over START, RIGHT, LEFT, FOOT, MATCH, FINISH arrays
+                    Object.keys(cur_problem).forEach(function (key) {
+                        var color;
+                        switch (key) {
+                            case 'START':
+                                color = 'green';
+                                break;
+                            case 'RIGHT':
+                                color = 'blue';
+                                break;
+                            case 'LEFT':
+                                color = 'purple';
+                                break;
+                            case 'FOOT':
+                                color = 'yellow';
+                                break;
+                            case 'MATCH':
+                                color = 'pink';
+                                break;
+                            case 'FINISH':
+                                color = 'red';
+                                break;
+                            default:
+                                color = 'black';
+                                break;
+                        }
+
+                        // Iterate over elements in the array
+                        cur_problem[key].forEach(function (element) {
+                            // Extract coordinates from the element (assuming it's in the format 'A12', 'B11', etc.)
+                            var letter = element.charAt(0);
+                            var num = element.substring(1);
+
+                            // Calculate x, y coordinates based on letter and num (you may need to adjust this based on your coordinate system)
+                            var x = calculateX(letter);
+                            var y = calculateY(num);
+                            console.log(letter);
+                            console.log(num);
+                            console.log(x);
+                            console.log(y);
+                            // Draw circle
+                            ctx.beginPath();
+                            ctx.arc(x, y, 20, 0, 2 * Math.PI);
+                            ctx.strokeStyle = color;
+                            ctx.lineWidth = 4;
+                            ctx.stroke();
+                            ctx.closePath();
+                        });
+                    });
+                }
+
+                // Update load names
+                function fetchProblemNames(loadPressed) {
+                    fetch('/get_problems')
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(loadPressed);
+                            if (loadPressed){
+                                var vln = loadProbList.options[loadProbList.selectedIndex].value;
+                                var tln = loadProbList.options[loadProbList.selectedIndex].textContent;
+                                console.log(tln);
+                                updateTitle(tln.substring(0,tln.indexOf(' ')), tln.substring(tln.indexOf(' ')));
+                            } else {
+                                loadProbList.innerHTML = '';
+                            }
+
+                            if (data.problems && Array.isArray(data.problems)) {
+                                data.problems.forEach(problem => {
+                                    if (loadPressed){
+                                        if (problem.name == vln){
+                                            cur_problem = problem.moves[0];
+                                            console.log(cur_problem);
+                                        }
+                                    } else {
+                                        
+                                        var option = document.createElement('option');
+                                        option.value = problem.name;
+                                        option.textContent = problem.name + ' ' + problem.grade;
+                                        loadProbList.appendChild(option);
+                                    }
+                                });
+                            } else {
+                                console.error("Invalid data structure:", data);
+                            }
+                        })
+                        .catch(error => console.error("Error fetching problem names", error));
+                }
+
+                fetchProblemNames(false);
+
+                function updateTitle(problemName, problemGrade){
+                    displayName.textContent = problemName + " " + problemGrade;
+                    displayName.style.display = "block";
+                }
+
+                loadButton.addEventListener('click', function(){
+                    locked = true;
+                    fetchProblemNames(true);
+                    sendPostRequest(cur_problem);
+                    setTimeout(function(){drawProblem();}, 1000);
+                });
+
+                // Clear button
+                clearButton.addEventListener('click', function(){
+                    locked = false;
+                    displayName.style.display = "none";
+                    cur_problem = JSON.parse(cur_problem_json);
+                    ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                    console.log(cur_problem);
+                });
+
+                saveButton.addEventListener('click', function(){
+                    if (curProbName.value != "") {
+                        if (cur_problem.START.length == 0){
+                            alert("Need Start Holds");
+                        } else if (cur_problem.FINISH.length == 0) {
+                            alert("Need Finish Holds");
+                        } else {
+                            locked = true;
+                            updateTitle(curProbName.value, curProbGrade.options[curProbGrade.selectedIndex].value);
+                            sendPostRequest(JSON.parse('{"name":"'+curProbName.value+'","grade":"'+curProbGrade.options[curProbGrade.selectedIndex].value+'","moves":['+JSON.stringify(cur_problem)+']}'));
+                            fetchProblemNames(false);
+                        }
+                    } else {
+                        alert("Need a name to save problem");
+                    }
+                });
+
+                // Send POST request
+                function sendPostRequest(prob) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/cur_prob', true);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState==4) {
+                            if (xhr.status == 200) {
+                                console.log("sussess");
+                            } else if (xhr.status == 409) {
+                                locked = false;
+                                displayName.style.display = 'none';
+                                alert("Name Already Exists");
+                            }
+                        }
+                    };
+                    xhr.send(JSON.stringify(prob));
+                }
+
+                // Draw problem function
+                drawCanvas.addEventListener('click', function(event){
+                    var x = event.offsetX;
+                    var y = event.offsetY;
+                    var num = '0';
+                    var letter = 'a';
+                    var draw = true;
+                    if (locked) {
+                        alert("Clear current problem first");
+                    } else {
+                        // Probably easier/cleaner way to do this but I don't care
+                        if (0<x && x<183) {
+                            x = x_centers[0];
+                            letter = 'A';
+                        } 
+                        else if (183<=x && x<260) {
+                            x = x_centers[1];
+                            letter = 'B';
+                        }
+                        else if (260<=x && x<337) {
+                            x = x_centers[2];
+                            letter = 'C';
+                        }
+                        else if (337<=x && x<414) {
+                            x = x_centers[3];
+                            letter = 'D';
+                        }
+                        else if (414<=x && x<492) {
+                            x = x_centers[4];
+                            letter = 'E';
+                        }
+                        else if (492<=x && x<570) {
+                            x = x_centers[5];
+                            letter = 'F';
+                        }
+                        else if (570<=x && x<648) {
+                            x = x_centers[6];
+                            letter = 'G';
+                        }
+                        else if (648<=x && x<725) {
+                            x = x_centers[7];
+                            letter = 'H';
+                        }
+                        else if (725<=x && x<802) {
+                            x = x_centers[8];
+                            letter = 'I';
+                        }
+                        else if (802<=x && x<880) {
+                            x = x_centers[9];
+                            letter = 'J';
+                        }
+                        else {
+                            x = x_centers[10];
+                            letter = 'K';
+                        }
+
+                        if (0<y && y<156) {
+                            y = y_centers[0];
+                            num = '12';
+                        } 
+                        else if (156<=y && y<235) {
+                            y = y_centers[1];
+                            num = '11';
+                        }
+                        else if (235<=y && y<312) {
+                            y = y_centers[2];
+                            num = '10';
+                        }
+                        else if (312<=y && y<389) {
+                            y = y_centers[3];
+                            num = '9';
+                        }
+                        else if (389<=y && y<468) {
+                            y = y_centers[4];
+                            num = '8';
+                        }
+                        else if (468<=y && y<546) {
+                            y = y_centers[5];
+                            num = '7';
+                        }
+                        else if (546<=y && y<624) {
+                            y = y_centers[6];
+                            num = '6';
+                        }
+                        else if (624<=y && y<700) {
+                            y = y_centers[7];
+                            num = '5';
+                        }
+                        else if (700<=y && y<777) {
+                            y = y_centers[8];
+                            num = '4';
+                        }
+                        else if (777<=y && y<855) {
+                            y = y_centers[9];
+                            num = '3';
+                        }
+                        else {
+                            y = y_centers[10];
+                            num = '2';
+                        }
+
+                        if (cur_problem.FINISH.find((element) => element == letter+num)){
+                            cur_problem.FINISH.splice(cur_problem.FINISH.indexOf(letter+num), 1);
+                            ctx.clearRect(x-25, y-25, 50, 50);
+                            draw = false;
+                        } else if (cur_problem.MATCH.find((element) => element == letter+num)) {
+                            cur_problem.MATCH.splice(cur_problem.MATCH.indexOf(letter+num), 1);
+                            cur_problem.FINISH.push(letter+num);
+                            ctx.strokeStyle = 'red';
+                        } else if (cur_problem.FOOT.find((element) => element == letter+num)) {
+                            cur_problem.FOOT.splice(cur_problem.FOOT.indexOf(letter+num), 1);
+                            cur_problem.MATCH.push(letter+num);
+                            ctx.strokeStyle = 'pink';
+                        } else if (cur_problem.LEFT.find((element) => element == letter+num)) {
+                            cur_problem.LEFT.splice(cur_problem.LEFT.indexOf(letter+num), 1);
+                            cur_problem.FOOT.push(letter+num);
+                            ctx.strokeStyle = 'yellow';
+                        } else if (cur_problem.RIGHT.find((element) => element == letter+num)) {
+                            cur_problem.RIGHT.splice(cur_problem.RIGHT.indexOf(letter+num), 1);
+                            cur_problem.LEFT.push(letter+num);
+                            ctx.strokeStyle = 'purple';
+                        } else if (cur_problem.START.find((element) => element == letter+num)) {
+                            cur_problem.START.splice(cur_problem.START.indexOf(letter+num), 1);
+                            cur_problem.RIGHT.push(letter+num);
+                            ctx.strokeStyle = 'blue';
+                        } else {
+                            if (cur_problem.START.length == 2) {
+                                cur_problem.RIGHT.push(letter+num);
+                                ctx.strokeStyle = 'blue';
+                            } else {
+                                cur_problem.START.push(letter+num);
+                                ctx.strokeStyle = 'green';
+                            }
+                        }
+                        if (draw) {
+                            ctx.beginPath();
+                            ctx.arc(x,y, 20, 0, 2*Math.PI);
+                            ctx.lineWidth = 4;
+                            ctx.stroke();
+                            ctx.closePath();
+                        }
+                        
+                        sendPostRequest(cur_problem);
+
+                    }
+                });
+            });
+        </script>  
+    </body>
+</html>
